@@ -164,11 +164,49 @@ Player.prototype = new Entity();
 Player.prototype.constructor = Player;
 function Player(fld) {
 	var nd = document.createElement('img');
-	nd.src = 'player_bomb_10.png';
+	this.currBombTimer = 10;
+	nd.src = 'player_bomb_'+this.currBombTimer+'.png';
 	this.init(0, 0, nd, fld, 60, 120, true, false);
 	this.jumplock = 0;
+	this.intvID = self.setInterval((function(self) {return function() {self.updateBomb();}})(this), 1000);
 	}
 Player.prototype.jump = function() {
+	if(this.ySpeed == 0 && this.jumplock==0) this.accY(-15);
+	this.jumplock = 1;
+	}
+Player.prototype.updateBomb = function() {
+	if(this.currBombTimer==1) {
+		self.clearInterval(this.intvID);
+		this.node.src = '';
+		this.setX(parseInt(this.getX())-267);
+		this.setY(parseInt(this.getY())-187);
+		this.floating = true;
+		this.currExplFrame = 0;
+		this.node.src = 'explosion'+this.currExplFrame+'.png';
+		this.intvID = self.setInterval((function(self) {return function() {self.updateExplosion();}})(this), 150);
+		}
+	else {
+		this.node.src = 'player_bomb_'+(--this.currBombTimer)+'.png';
+		}
+	}
+Player.prototype.updateExplosion = function() {
+	if(this.currExplFrame > 5) {
+		self.clearInterval(this.intvID);
+		this.node.src = '';
+		}
+	else {
+		this.node.src = 'explosion'+(++this.currExplFrame)+'.png';
+		}
+	}
+/* - - - - - - - [Class] Friend- - - - - - - */
+Friend.prototype = new Entity();
+Friend.prototype.constructor = Friend;
+function Friend(fld) {
+	var nd = document.createElement('img');
+	nd.src = 'friend.png';
+	this.init(400, 0, nd, fld, 60, 120, true, false);
+	}
+Friend.prototype.jump = function() {
 	if(this.ySpeed == 0 && this.jumplock==0) this.accY(-15);
 	this.jumplock = 1;
 	}
@@ -204,6 +242,9 @@ function Game() {
 	var plyr = new Player(this.field);
 	this.player = plyr;
 	this.entities.push(plyr);
+	// firends
+	var frnd = new Friend(this.field);
+	this.entities.push(frnd);
 	// solid blocks
 	var sb = new SolidBlock(this.field, 300, 0, 20, 50);
 	this.entities.push(sb);
@@ -239,7 +280,7 @@ Game.prototype.tick = function() {
 	// entities
 	for(var i=0; i<this.entities.length; i++) {
 		var e = this.entities[i];
-		if((parseInt(e.getY())+parseInt(e.height))<this.field.height) {
+		if((parseInt(e.getY())+parseInt(e.height))<this.field.height && !e.floating) {
 			e.accY(this.gravity);
 			}
 		if(i>0) { // for all entities except player
