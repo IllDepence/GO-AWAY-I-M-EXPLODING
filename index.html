@@ -26,6 +26,10 @@ left: 10px;
 .entity {
 position: absolute;
 }
+.solidBlock {
+background-image: url('darkgreypixel.png');
+background-repeat: repeat;
+}
 #debug {
 position: absolute;
 top: 20px;
@@ -60,7 +64,7 @@ Entity.prototype.init = function(x, y, nd, fld, wi, he, sld) {
 	if(prt instanceof HTMLElement) {
 		this.node = nd;
 		this.parentNode = prt;
-		this.node.className = 'entity';
+		this.node.className += ' entity';
 		this.setX(x);
 		this.setY(y);
 		this.parentNode.appendChild(this.node);
@@ -86,8 +90,18 @@ Entity.prototype.accY = function(d) {
 Entity.prototype.decel = function() {
 	this.xSpeed = this.xSpeed+(this.xSpeed==0 ? 0 : (this.xSpeed>0 ? -1 : 1));
 	}
+Entity.prototype.collidesWith = function(e) {
+	var sLeft = parseInt(this.getX());
+	var sRight = parseInt(this.getX()) + parseInt(this.width);
+	var sTop = parseInt(this.getY());
+	var sBottom = parseInt(this.getY()) + parseInt(this.height);
+	var eLeft = parseInt(e.getX());
+	var eRight = parseInt(e.getX()) + parseInt(e.width);
+	var eTop = parseInt(e.getY());
+	var eBottom = parseInt(e.getY()) + parseInt(e.height);
+	return ((sRight>=eLeft) && (sLeft<=eRight) && (sBottom>=eTop) && (sTop<=eBottom));
+	}
 Entity.prototype.tick = function() {
-	//document.getElementById('debug').innerHTML = this.xSpeed + ' | ' + this.ySpeed;
 	var nextX = parseInt(this.getX()) + parseInt(this.xSpeed);
 	var nextY = parseInt(this.getY()) + parseInt(this.ySpeed);
 	if(nextX>=0 && (nextX+this.width)<this.field.width) {
@@ -118,7 +132,18 @@ Player.prototype.jump = function() {
 	if(this.ySpeed == 0 && this.jumplock==0) this.accY(-15);
 	this.jumplock = 1;
 	}
-/* - - - - - - - [Class] gameField - - - - - - - */
+/* - - - - - - - [Class] SolidBlock - - - - - - - */
+SolidBlock.prototype = new Entity();
+SolidBlock.prototype.constructor = SolidBlock;
+function SolidBlock(fld, x, y, w, h) {
+	var nd = document.createElement('div');
+	nd.className = 'solidBlock'
+	nd.innerHTML = '.';
+	nd.style.width = w+'px';
+	nd.style.height = h+'px';
+	this.init(x, y, nd, fld, w, h, true);
+	}
+/* - - - - - - - [Class] GameField - - - - - - - */
 function GameField() {}
 GameField.prototype.init = function(w, h, nd) {
 	this.node = nd;
@@ -131,60 +156,79 @@ GameField.prototype.init = function(w, h, nd) {
 	}
 /* - - - - - - - [Class] Game - - - - - - - */
 function Game() {
+	// game field
 	this.field = new GameField();
 	this.field.init(700, 400, document.getElementById('gameField'));
 	this.entities = [];
+	// player
 	var plyr = new Player(this.field);
 	this.player = plyr;
 	this.entities.push(plyr);
-	this.currKeyCode = -1;
+	// solid blocks
+	var sb = new SolidBlock(this.field, 300, 0, 20, 50);
+	this.entities.push(sb);
+	this.currKeyCodes = [] ;
 	this.gravity = 1;
 	this.ticks = 0;
 	}
 Game.prototype.tick = function() {
 	this.ticks++;
-	switch(game.currKeyCode) {
-		case 32: //space bar
-			game.player.jump();
-			break;
-		case 37: //left
-			game.player.accX(-1);
-			break;
-		case 38: //up
-			game.player.jump();
-			break;
-		case 39: //right
-			game.player.accX(1);
-			break;
-		case 40: //down
-			//game.player.accY(1);
-			break;
-		case -1:
-			game.player.decel();
-			game.player.jumplock = 0;
-			break;
+	for(var i=0; i<this.currKeyCodes.length; i++) {
+		switch(this.currKeyCodes[i]) {
+			case 32: //space bar
+				game.player.jump();
+				break;
+			case 37: //left
+				game.player.accX(-1);
+				break;
+			case 38: //up
+				game.player.jump();
+				break;
+			case 39: //right
+				game.player.accX(1);
+				break;
+			case 40: //down
+				//game.player.accY(1);
+				break;
+			}
 		}
+	if(this.currKeyCodes.indexOf(37) == -1 && this.currKeyCodes.indexOf(39) == -1) {
+		game.player.decel();
+		}
+	if(this.currKeyCodes.indexOf(32) == -1 && this.currKeyCodes.indexOf(38) == -1) {
+		game.player.jumplock = 0;
+		}
+	document.getElementById('debug').innerHTML = this.currKeyCodes.toString();
 	for(var i=0; i<this.entities.length; i++) {
 		var e = this.entities[i];
-		if((parseInt(e.getY())+parseInt(e.height))<this.field.height)
+		if((parseInt(e.getY())+parseInt(e.height))<this.field.height) {
 			e.accY(this.gravity);
+			}
+		if(i>0) { //for all entities except player
+			if(this.player.collidesWith(e)) {
+				this.player.xSpeed = 0;
+				this.player.ySpeed = 0;
+				}
+			}
 		e.tick();
 		}
 	}
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 var game = new Game();
-//var gameInfo = document.getElementById('gameInfo');
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 document.onkeydown = function(e) {
 	var keyCode = (window.event) ? event.keyCode : e.keyCode;
-	game.currKeyCode = keyCode;
+	if(game.currKeyCodes.indexOf(keyCode) == -1) {
+		game.currKeyCodes.push(keyCode);
+		}
 	}
 
 document.onkeyup = function(e) {
 	var keyCode = (window.event) ? event.keyCode : e.keyCode;
-	game.currKeyCode = -1;
+	var index = game.currKeyCodes.indexOf(keyCode);
+	game.currKeyCodes.splice(index, 1);
 	}
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
