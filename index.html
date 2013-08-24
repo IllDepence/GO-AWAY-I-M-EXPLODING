@@ -5,7 +5,7 @@
 
 <!-- - - - - - - - - - - - - - - - - <head> - - - - - - - - - - - - - - - - -->
 <head>
-<title>10 Seconds</title>
+<title>GO AWAY I&#39;M EXPLODING</title>
 
 <link rel="SHORTCUT ICON" href="favicon.ico" />
 <link rel="stylesheet" type="text/css" href="style.css" />
@@ -68,19 +68,19 @@ Entity.prototype.init = function(x, y, nd, fld, wi, he, sld, flt) {
 		this.setX(x);
 		this.setY(y);
 		this.parentNode.appendChild(this.node);
-		this.width = wi;
-		this.height = he;
-		this.solid = sld;
-		this.floating = flt;
-		this.xSpeed = 0; // change of x in one tick
-		this.ySpeed = 0; //     "     y     "
 		}
+	this.width = wi;
+	this.height = he;
+	this.solid = sld;
+	this.floating = flt;
+	this.xSpeed = 0; // change of x in one tick
+	this.ySpeed = 0; //     "     y     "
 	}
 Entity.prototype.getX = function() {
-	return this.node.style.left.substr(0, this.node.style.left.length-2);
+	return parseInt(this.node.style.left.substr(0, this.node.style.left.length-2));
 	}
 Entity.prototype.getY = function() {
-	return this.node.style.top.substr(0, this.node.style.top.length-2);
+	return parseInt(this.node.style.top.substr(0, this.node.style.top.length-2));
 	}
 Entity.prototype.accX = function(d) {
 	this.xSpeed = this.xSpeed+d;
@@ -92,30 +92,30 @@ Entity.prototype.decel = function() {
 	this.xSpeed = this.xSpeed+(this.xSpeed==0 ? 0 : (this.xSpeed>0 ? -1 : 1));
 	}
 Entity.prototype.collidesWith = function(e) {
-	var sLeft = parseInt(this.getX());
-	var sRight = parseInt(this.getX()) + parseInt(this.width);
-	var sTop = parseInt(this.getY());
-	var sBottom = parseInt(this.getY()) + parseInt(this.height);
-	var eLeft = parseInt(e.getX());
-	var eRight = parseInt(e.getX()) + parseInt(e.width);
-	var eTop = parseInt(e.getY());
-	var eBottom = parseInt(e.getY()) + parseInt(e.height);
+	var sLeft = this.getX();
+	var sRight = this.getX() + this.width;
+	var sTop = this.getY();
+	var sBottom = this.getY() + this.height;
+	var eLeft = e.getX();
+	var eRight = e.getX() + e.width;
+	var eTop = e.getY();
+	var eBottom = e.getY() + e.height;
 	return ((sRight>=eLeft) && (sLeft<=eRight) && (sBottom>=eTop) && (sTop<=eBottom));
 	}
 Entity.prototype.preventCollisionWith = function(e) {
 	if(!this.solid || !e.solid) return;
-	var sLeft = parseInt(this.getX());
-	var sRight = parseInt(this.getX()) + parseInt(this.width);
-	var sTop = parseInt(this.getY());
-	var sBottom = parseInt(this.getY()) + parseInt(this.height);
+	var sLeft = this.getX();
+	var sRight = this.getX() + this.width;
+	var sTop = this.getY();
+	var sBottom = this.getY() + this.height;
 	var sNLeft = sLeft + this.xSpeed;
 	var sNRight = sRight + this.xSpeed;
 	var sNTop = sTop + this.ySpeed;
 	var sNBottom = sBottom + this.ySpeed;
-	var eLeft = parseInt(e.getX());
-	var eRight = parseInt(e.getX()) + parseInt(e.width);
-	var eTop = parseInt(e.getY());
-	var eBottom = parseInt(e.getY()) + parseInt(e.height);
+	var eLeft = e.getX();
+	var eRight = e.getX() + e.width;
+	var eTop = e.getY();
+	var eBottom = e.getY() + e.height;
 	if(this.xSpeed > 0) { // moving right
 		if((sLeft < eLeft) && (sNRight >= eLeft) && (sBottom-1>eTop) && (sTop<eBottom-1)) { // collision from right ahead
 			this.setX(eLeft-this.width);
@@ -143,8 +143,8 @@ Entity.prototype.preventCollisionWith = function(e) {
 	}
 Entity.prototype.tick = function() {
 	if(this.floating) return;
-	var nextX = parseInt(this.getX()) + parseInt(this.xSpeed);
-	var nextY = parseInt(this.getY()) + parseInt(this.ySpeed);
+	var nextX = this.getX() + this.xSpeed;
+	var nextY = this.getY() + this.ySpeed;
 	if(nextX>=0 && (nextX+this.width)<this.field.width) {
 		this.setX(nextX);
 		}
@@ -163,11 +163,11 @@ Entity.prototype.tick = function() {
 /* - - - - - - - [Class] Player - - - - - - - */
 Player.prototype = new Entity();
 Player.prototype.constructor = Player;
-function Player(fld) {
+function Player(fld, x, y) {
 	var nd = document.createElement('img');
 	this.currBombTimer = 10;
 	nd.src = 'player_bomb_'+this.currBombTimer+'.png';
-	this.init(0, 0, nd, fld, 60, 120, true, false);
+	this.init(x, y, nd, fld, 60, 120, true, false);
 	this.jumplock = 0;
 	this.intvID = self.setInterval((function(self) {return function() {self.updateBomb();}})(this), 1000);
 	}
@@ -179,8 +179,8 @@ Player.prototype.updateBomb = function() {
 	if(this.currBombTimer==1) {
 		self.clearInterval(this.intvID);
 		this.node.src = '';
-		this.setX(parseInt(this.getX())-267);
-		this.setY(parseInt(this.getY())-187);
+		this.setX(this.getX()-267);
+		this.setY(this.getY()-187);
 		this.width = 600;
 		this.height = 496;
 		this.floating = true;
@@ -214,20 +214,29 @@ Player.prototype.explode = function() {
 			}
 		e.tick();
 		}
+	setTimeout(function(){game.end();}, 3000);
 	}
 /* - - - - - - - [Class] Friend- - - - - - - */
 Friend.prototype = new Entity();
 Friend.prototype.constructor = Friend;
-function Friend(fld) {
+function Friend(fld, x, y, maxS) {
 	var nd = document.createElement('img');
 	nd.src = 'friend.png';
 	this.dead = false;
-	this.maxSpeed = 10;
-	this.init(400, 0, nd, fld, 60, 120, true, false);
+	this.maxSpeed = maxS;
+	this.init(x, y, nd, fld, 60, 120, true, false);
+	this.standingSince = 0;
+	this.prevPosX = -1;
+	this.jumplock = 0;
 	}
 Friend.prototype.follow = function(whom) {
-	var s = parseInt(this.getX());
-	var w = parseInt(whom.getX());
+	if(this.dead) {
+		this.xSpeed = 0;
+		this.ySpeed = 5;
+		return;
+		}
+	var s = this.getX();
+	var w = whom.getX();
 	if(Math.abs(this.xSpeed)<this.maxSpeed) {
 		if(s > w) {
 			this.accX(-1);
@@ -238,6 +247,13 @@ Friend.prototype.follow = function(whom) {
 		}
 	else
 		this.decel();
+	if(this.prevPosX == this.getX()) this.standingSince++;
+	else {
+		this.standingSince = 0;
+		this.jumplock = 0;
+		}
+	if(this.standingSince > 30) this.jump();
+	this.prevPosX = this.getX();
 	}
 Friend.prototype.jump = function() {
 	if(this.ySpeed == 0 && this.jumplock==0) this.accY(-15);
@@ -256,33 +272,64 @@ function SolidBlock(fld, x, y, w, h) {
 	}
 /* - - - - - - - [Class] GameField - - - - - - - */
 function GameField() {}
-GameField.prototype.init = function(w, h, nd) {
+GameField.prototype.init = function(w, h, nd, bg) {
 	this.node = nd;
 	this.width = w;
 	this.height = h;
 	if(this.node instanceof HTMLElement) {
 		this.node.style.width = w+'px';
 		this.node.style.height = h+'px';
+		if(bg != null) {
+			this.node.style.backgroundImage = "url('"+bg+"')";
+			this.node.style.backgroundRepeat = 'repeat';
+			}
 		}
 	}
 /* - - - - - - - [Class] Game - - - - - - - */
 function Game() {
-	// game field
+	// setup
 	this.field = new GameField();
-	this.field.init(1200, 700, document.getElementById('gameField'));
+	this.currKeyCodes = [] ;
+	this.gravity = 1;
+	// intro
+	this.intro();
+	}
+Game.prototype.level = function(num) {
+	this.field.init(1200, 700, document.getElementById('gameField'), 'bg0.jpg');
 	this.entities = [];
 	// player
-	var plyr = new Player(this.field);
+	var plyr = new Player(this.field, 0, 580);
 	this.player = plyr;
 	this.entities.push(plyr);
 	// firends
-	var frnd = new Friend(this.field);
+	var frnd = new Friend(this.field, 500, 580, 5);
 	this.entities.push(frnd);
+	var frnd2 = new Friend(this.field, 700, 580, 3);
+	this.entities.push(frnd2);
 	// solid blocks
-	var sb = new SolidBlock(this.field, 300, 0, 20, 50);
+	var sb = new SolidBlock(this.field, 300, 650, 20, 50);
 	this.entities.push(sb);
-	this.currKeyCodes = [] ;
-	this.gravity = 1;
+	}
+Game.prototype.intro = function() {
+	this.field.init(1200,700, document.getElementById('gameField'), 'cover.png');
+	this.field.node.title = 'click to start';
+	this.field.node.onclick = (function(self) {return function() {self.start();}})(this);
+	}
+Game.prototype.start = function() {
+	this.level(0);
+	draw();
+	}
+Game.prototype.end = function() {
+	var win = true;
+	for(var i=0; i<this.entities.length; i++) {
+		var e = this.entities[i];
+		this.field.node.removeChild(e.node);
+		if(e instanceof Friend && e.dead) win=false;
+		}
+	if(win) {
+		}
+	else {
+		}
 	}
 Game.prototype.tick = function() {
 	// keyboard input
@@ -313,18 +360,23 @@ Game.prototype.tick = function() {
 	// entities
 	for(var i=0; i<this.entities.length; i++) {
 		var e = this.entities[i];
-		if((parseInt(e.getY())+parseInt(e.height))<this.field.height && !e.floating) {
+		if(e.getY()+e.height<this.field.height && !e.floating) {
 			e.accY(this.gravity);
 			}
 		if(i>0) { // for all entities except player
 			this.player.preventCollisionWith(e);
 			}
-		e.tick();
 		if(e instanceof Friend) {
 			e.follow(this.player);
+			for(var j=0; j<this.entities.length; j++) {
+				ej = this.entities[j];
+				if(e != ej) {
+					e.preventCollisionWith(ej);
+					}
+				}
 			}
+		e.tick();
 		}
-	
 	}
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -354,7 +406,7 @@ function draw() {
 		}, 1000 / fps);
 		game.tick();
 	}
-draw();
+//draw();
 
 </script>
 
