@@ -30,6 +30,14 @@ position: absolute;
 background-image: url('darkgreypixel.png');
 background-repeat: repeat;
 }
+#levelDisp {
+position: absolute;
+top: -100px;
+left: -100px;
+font-size: 30px;
+font-family: sans-serif;
+color: #f03030;
+}
 #debug {
 position: absolute;
 top: 20px;
@@ -48,6 +56,7 @@ left: 800px;
 </body>
 <!-- - - - - - - - - - - - - - - - - </body> - - - - - - - - - - - - - - - - -->
 <div id="gameField"></div>
+<div id="levelDisp"></div>
 <div id="debug"></div>
 <script>
 /* - - - - - - - [Class] Entity - - - - - - - */
@@ -219,7 +228,7 @@ Player.prototype.explode = function() {
 /* - - - - - - - [Class] Friend- - - - - - - */
 Friend.prototype = new Entity();
 Friend.prototype.constructor = Friend;
-function Friend(fld, x, y, maxS) {
+function Friend(fld, x, y, maxS, normS) {
 	var nd = document.createElement('img');
 	nd.src = 'friend.png';
 	this.dead = false;
@@ -228,6 +237,7 @@ function Friend(fld, x, y, maxS) {
 	this.standingSince = 0;
 	this.prevPosX = -1;
 	this.jumplock = 0;
+	this.speed = normS;
 	}
 Friend.prototype.follow = function(whom) {
 	if(this.dead) {
@@ -239,10 +249,10 @@ Friend.prototype.follow = function(whom) {
 	var w = whom.getX();
 	if(Math.abs(this.xSpeed)<this.maxSpeed) {
 		if(s > w) {
-			this.accX(-1);
+			this.accX(-this.speed);
 			}
 		if(s < w) {
-			this.accX(1);
+			this.accX(this.speed);
 			}
 		}
 	else
@@ -252,7 +262,7 @@ Friend.prototype.follow = function(whom) {
 		this.standingSince = 0;
 		this.jumplock = 0;
 		}
-	if(this.standingSince > 30) this.jump();
+	if(this.standingSince > 30/this.speed) this.jump();
 	this.prevPosX = this.getX();
 	}
 Friend.prototype.jump = function() {
@@ -288,27 +298,47 @@ GameField.prototype.init = function(w, h, nd, bg) {
 /* - - - - - - - [Class] Game - - - - - - - */
 function Game() {
 	// setup
+	this.levelDisp = document.getElementById('levelDisp');
+	this.levelDisp.style.top = '20px';
+	this.levelDisp.style.left = '1050px';
 	this.field = new GameField();
 	this.currKeyCodes = [] ;
 	this.gravity = 1;
+	this.currLevel = 0;
 	// intro
 	this.intro();
 	}
 Game.prototype.level = function(num) {
-	this.field.init(1200, 700, document.getElementById('gameField'), 'bg0.jpg');
-	this.entities = [];
-	// player
-	var plyr = new Player(this.field, 0, 580);
-	this.player = plyr;
-	this.entities.push(plyr);
-	// firends
-	var frnd = new Friend(this.field, 500, 580, 5);
-	this.entities.push(frnd);
-	var frnd2 = new Friend(this.field, 700, 580, 3);
-	this.entities.push(frnd2);
-	// solid blocks
-	var sb = new SolidBlock(this.field, 300, 650, 20, 50);
-	this.entities.push(sb);
+	this.levelDisp.innerHTML = 'Level: '+num;
+	switch(num) {
+		case 0:
+			this.field.init(1200, 700, document.getElementById('gameField'), 'bg0.jpg');
+			this.entities = [];
+			// player
+			var plyr = new Player(this.field, 0, 580);
+			this.player = plyr;
+			this.entities.push(plyr);
+			// firends
+			var frnd = new Friend(this.field, 500, 580, 5, 1);
+			this.entities.push(frnd);
+			var frnd2 = new Friend(this.field, 700, 580, 3, 1);
+			this.entities.push(frnd2);
+			// solid blocks
+			var sb = new SolidBlock(this.field, 300, 650, 20, 50);
+			this.entities.push(sb);
+			break;
+		case 1:
+			this.field.init(1200, 700, document.getElementById('gameField'), 'bg1.jpg');
+			this.entities = [];
+			// player
+			var plyr = new Player(this.field, 0, 580);
+			this.player = plyr;
+			this.entities.push(plyr);
+			// firends
+			var frnd = new Friend(this.field, 500, 580, 10, 5);
+			this.entities.push(frnd);
+			break;
+		}
 	}
 Game.prototype.intro = function() {
 	this.field.init(1200,700, document.getElementById('gameField'), 'cover.png');
@@ -316,7 +346,7 @@ Game.prototype.intro = function() {
 	this.field.node.onclick = (function(self) {return function() {self.start();}})(this);
 	}
 Game.prototype.start = function() {
-	this.level(0);
+	this.level(this.currLevel);
 	draw();
 	}
 Game.prototype.end = function() {
@@ -326,9 +356,13 @@ Game.prototype.end = function() {
 		this.field.node.removeChild(e.node);
 		if(e instanceof Friend && e.dead) win=false;
 		}
+	this.entities = [];
 	if(win) {
+		this.level(++this.currLevel);
 		}
 	else {
+		this.currLevel = 0;
+		this.level(0);
 		}
 	}
 Game.prototype.tick = function() {
@@ -406,7 +440,6 @@ function draw() {
 		}, 1000 / fps);
 		game.tick();
 	}
-//draw();
 
 </script>
 
