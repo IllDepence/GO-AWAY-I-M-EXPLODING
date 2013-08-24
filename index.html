@@ -83,7 +83,11 @@ Entity.prototype.accX = function(d) {
 Entity.prototype.accY = function(d) {
 	this.ySpeed = this.ySpeed+d;
 	}
+Entity.prototype.decel = function() {
+	this.xSpeed = this.xSpeed+(this.xSpeed==0 ? 0 : (this.xSpeed>0 ? -1 : 1));
+	}
 Entity.prototype.tick = function() {
+	//document.getElementById('debug').innerHTML = this.xSpeed + ' | ' + this.ySpeed;
 	var nextX = parseInt(this.getX()) + parseInt(this.xSpeed);
 	var nextY = parseInt(this.getY()) + parseInt(this.ySpeed);
 	if(nextX>=0 && (nextX+this.width)<this.field.width) {
@@ -108,6 +112,11 @@ function Player(fld) {
 	var nd = document.createElement('img');
 	nd.src = 'bb.png';
 	this.init(0, 0, nd, fld, 10, 10, true);
+	this.jumplock = 0;
+	}
+Player.prototype.jump = function() {
+	if(this.ySpeed == 0 && this.jumplock==0) this.accY(-15);
+	this.jumplock = 1;
 	}
 /* - - - - - - - [Class] gameField - - - - - - - */
 function GameField() {}
@@ -129,24 +138,37 @@ function Game() {
 	this.player = plyr;
 	this.entities.push(plyr);
 	this.currKeyCode = -1;
+	this.gravity = 1;
+	this.ticks = 0;
 	}
 Game.prototype.tick = function() {
+	this.ticks++;
 	switch(game.currKeyCode) {
+		case 32: //space bar
+			game.player.jump();
+			break;
 		case 37: //left
 			game.player.accX(-1);
 			break;
 		case 38: //up
-			game.player.accY(-1);
+			game.player.jump();
 			break;
 		case 39: //right
 			game.player.accX(1);
 			break;
 		case 40: //down
-			game.player.accY(1);
+			//game.player.accY(1);
+			break;
+		case -1:
+			game.player.decel();
+			game.player.jumplock = 0;
 			break;
 		}
 	for(var i=0; i<this.entities.length; i++) {
-		this.entities[i].tick();
+		var e = this.entities[i];
+		if((parseInt(e.getY())+parseInt(e.height))<this.field.height)
+			e.accY(this.gravity);
+		e.tick();
 		}
 	}
 
@@ -162,7 +184,7 @@ document.onkeydown = function(e) {
 
 document.onkeyup = function(e) {
 	var keyCode = (window.event) ? event.keyCode : e.keyCode;
-	//game.currKeyCode = -1;
+	game.currKeyCode = -1;
 	}
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
