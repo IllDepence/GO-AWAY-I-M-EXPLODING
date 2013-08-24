@@ -26,6 +26,11 @@ left: 10px;
 .entity {
 position: absolute;
 }
+#debug {
+position: absolute;
+top: 20px;
+left: 800px;
+}
 </style>
 <!-- - - - - - - - - - - - - - - - - </style> - - - - - - - - - - - - - - - - -->
 
@@ -39,6 +44,7 @@ position: absolute;
 </body>
 <!-- - - - - - - - - - - - - - - - - </body> - - - - - - - - - - - - - - - - -->
 <div id="gameField"></div>
+<div id="debug"></div>
 <script>
 /* - - - - - - - [Class] Entity - - - - - - - */
 function Entity() {}
@@ -48,7 +54,9 @@ Entity.prototype.setX = function(x) {
 Entity.prototype.setY = function(y) {
 	this.node.style.top = y+'px';
 	}
-Entity.prototype.init = function(x, y, nd, prt, wi, he, sld) {
+Entity.prototype.init = function(x, y, nd, fld, wi, he, sld) {
+	this.field = fld;
+	prt = fld.node;
 	if(prt instanceof HTMLElement) {
 		this.node = nd;
 		this.parentNode = prt;
@@ -70,14 +78,28 @@ Entity.prototype.getY = function() {
 	return this.node.style.top.substr(0, this.node.style.top.length-2);
 	}
 Entity.prototype.accX = function(d) {
-	this.xSpeed = this.xSpeed-d;
+	this.xSpeed = this.xSpeed+d;
 	}
 Entity.prototype.accY = function(d) {
-	this.ySpeed = this.ySpeed-d;
+	this.ySpeed = this.ySpeed+d;
 	}
 Entity.prototype.tick = function() {
-	this.setX(parseInt(this.getX()) + parseInt(this.xSpeed));
-	this.setY(parseInt(this.getY()) + parseInt(this.ySpeed));
+	var nextX = parseInt(this.getX()) + parseInt(this.xSpeed);
+	var nextY = parseInt(this.getY()) + parseInt(this.ySpeed);
+	if(nextX>=0 && (nextX+this.width)<this.field.width) {
+		this.setX(nextX);
+		}
+	else {
+		this.xSpeed = 0;
+		this.setX(nextX<0 ? 0 : this.field.width-this.width);
+		}
+	if(nextY>=0 && (nextY+this.height)<this.field.height) {
+		this.setY(nextY);
+		}
+	else {
+		this.ySpeed = 0;
+		this.setY(nextY<0 ? 0 : this.field.height-this.height);
+		}
 	}
 /* - - - - - - - [Class] Player - - - - - - - */
 Player.prototype = new Entity();
@@ -85,15 +107,17 @@ Player.prototype.constructor = Player;
 function Player(fld) {
 	var nd = document.createElement('img');
 	nd.src = 'bb.png';
-	this.init(20, 20, nd, fld, 10, 10, true);
+	this.init(0, 0, nd, fld, 10, 10, true);
 	}
 /* - - - - - - - [Class] gameField - - - - - - - */
 function GameField() {}
-GameField.prototype.init = function(width, height, nd) {
+GameField.prototype.init = function(w, h, nd) {
 	this.node = nd;
+	this.width = w;
+	this.height = h;
 	if(this.node instanceof HTMLElement) {
-		this.node.style.width = width+'px';
-		this.node.style.height = height+'px';
+		this.node.style.width = w+'px';
+		this.node.style.height = h+'px';
 		}
 	}
 /* - - - - - - - [Class] Game - - - - - - - */
@@ -101,7 +125,7 @@ function Game() {
 	this.field = new GameField();
 	this.field.init(700, 400, document.getElementById('gameField'));
 	this.entities = [];
-	var plyr = new Player(this.field.node);
+	var plyr = new Player(this.field);
 	this.player = plyr;
 	this.entities.push(plyr);
 	this.currKeyCode = -1;
@@ -109,16 +133,16 @@ function Game() {
 Game.prototype.tick = function() {
 	switch(game.currKeyCode) {
 		case 37: //left
-			game.player.accX(1);
-			break;
-		case 38: //up
-			game.player.accY(1);
-			break;
-		case 39: //right
 			game.player.accX(-1);
 			break;
-		case 40: //down
+		case 38: //up
 			game.player.accY(-1);
+			break;
+		case 39: //right
+			game.player.accX(1);
+			break;
+		case 40: //down
+			game.player.accY(1);
 			break;
 		}
 	for(var i=0; i<this.entities.length; i++) {
@@ -137,7 +161,7 @@ document.onkeydown = function(e) {
 	}
 
 document.onkeyup = function(e) {
-	//var keyCode = (window.event) ? event.keyCode : e.keyCode;
+	var keyCode = (window.event) ? event.keyCode : e.keyCode;
 	//game.currKeyCode = -1;
 	}
 
