@@ -164,8 +164,8 @@ Player.prototype = new Entity();
 Player.prototype.constructor = Player;
 function Player(fld) {
 	var nd = document.createElement('img');
-	nd.src = 'bb.png';
-	this.init(0, 0, nd, fld, 10, 10, true, false);
+	nd.src = 'player_bomb_10.png';
+	this.init(0, 0, nd, fld, 60, 120, true, false);
 	this.jumplock = 0;
 	}
 Player.prototype.jump = function() {
@@ -198,7 +198,7 @@ GameField.prototype.init = function(w, h, nd) {
 function Game() {
 	// game field
 	this.field = new GameField();
-	this.field.init(700, 400, document.getElementById('gameField'));
+	this.field.init(1200, 700, document.getElementById('gameField'));
 	this.entities = [];
 	// player
 	var plyr = new Player(this.field);
