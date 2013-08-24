@@ -103,7 +103,7 @@ Entity.prototype.collidesWith = function(e) {
 	return ((sRight>=eLeft) && (sLeft<=eRight) && (sBottom>=eTop) && (sTop<=eBottom));
 	}
 Entity.prototype.preventCollisionWith = function(e) {
-	if(!e.solid) return;
+	if(!this.solid || !e.solid) return;
 	var sLeft = parseInt(this.getX());
 	var sRight = parseInt(this.getX()) + parseInt(this.width);
 	var sTop = parseInt(this.getY());
@@ -142,6 +142,7 @@ Entity.prototype.preventCollisionWith = function(e) {
 		}
 	}
 Entity.prototype.tick = function() {
+	if(this.floating) return;
 	var nextX = parseInt(this.getX()) + parseInt(this.xSpeed);
 	var nextY = parseInt(this.getY()) + parseInt(this.ySpeed);
 	if(nextX>=0 && (nextX+this.width)<this.field.width) {
@@ -180,10 +181,14 @@ Player.prototype.updateBomb = function() {
 		this.node.src = '';
 		this.setX(parseInt(this.getX())-267);
 		this.setY(parseInt(this.getY())-187);
+		this.width = 600;
+		this.height = 496;
 		this.floating = true;
+		this.solid = false;
 		this.currExplFrame = 0;
 		this.node.src = 'explosion'+this.currExplFrame+'.png';
 		this.intvID = self.setInterval((function(self) {return function() {self.updateExplosion();}})(this), 150);
+		this.explode();
 		}
 	else {
 		this.node.src = 'player_bomb_'+(--this.currBombTimer)+'.png';
@@ -198,13 +203,41 @@ Player.prototype.updateExplosion = function() {
 		this.node.src = 'explosion'+(++this.currExplFrame)+'.png';
 		}
 	}
+Player.prototype.explode = function() {
+	for(var i=0; i<game.entities.length; i++) {
+		var e = game.entities[i];
+		if(i>0) { // for all entities except player
+			if(e instanceof Friend && this.collidesWith(e)) {
+				e.node.src = 'friend_dead.gif';
+				e.dead = true;
+				}
+			}
+		e.tick();
+		}
+	}
 /* - - - - - - - [Class] Friend- - - - - - - */
 Friend.prototype = new Entity();
 Friend.prototype.constructor = Friend;
 function Friend(fld) {
 	var nd = document.createElement('img');
 	nd.src = 'friend.png';
+	this.dead = false;
+	this.maxSpeed = 10;
 	this.init(400, 0, nd, fld, 60, 120, true, false);
+	}
+Friend.prototype.follow = function(whom) {
+	var s = parseInt(this.getX());
+	var w = parseInt(whom.getX());
+	if(Math.abs(this.xSpeed)<this.maxSpeed) {
+		if(s > w) {
+			this.accX(-1);
+			}
+		if(s < w) {
+			this.accX(1);
+			}
+		}
+	else
+		this.decel();
 	}
 Friend.prototype.jump = function() {
 	if(this.ySpeed == 0 && this.jumplock==0) this.accY(-15);
@@ -272,10 +305,10 @@ Game.prototype.tick = function() {
 			}
 		}
 	if(this.currKeyCodes.indexOf(37) == -1 && this.currKeyCodes.indexOf(39) == -1) {
-		game.player.decel();
+		this.player.decel();
 		}
 	if(this.currKeyCodes.indexOf(32) == -1 && this.currKeyCodes.indexOf(38) == -1) {
-		game.player.jumplock = 0;
+		this.player.jumplock = 0;
 		}
 	// entities
 	for(var i=0; i<this.entities.length; i++) {
@@ -287,7 +320,11 @@ Game.prototype.tick = function() {
 			this.player.preventCollisionWith(e);
 			}
 		e.tick();
+		if(e instanceof Friend) {
+			e.follow(this.player);
+			}
 		}
+	
 	}
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
