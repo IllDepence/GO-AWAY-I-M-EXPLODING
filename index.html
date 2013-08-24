@@ -58,7 +58,7 @@ Entity.prototype.setX = function(x) {
 Entity.prototype.setY = function(y) {
 	this.node.style.top = y+'px';
 	}
-Entity.prototype.init = function(x, y, nd, fld, wi, he, sld) {
+Entity.prototype.init = function(x, y, nd, fld, wi, he, sld, flt) {
 	this.field = fld;
 	prt = fld.node;
 	if(prt instanceof HTMLElement) {
@@ -71,6 +71,7 @@ Entity.prototype.init = function(x, y, nd, fld, wi, he, sld) {
 		this.width = wi;
 		this.height = he;
 		this.solid = sld;
+		this.floating = flt;
 		this.xSpeed = 0; // change of x in one tick
 		this.ySpeed = 0; //     "     y     "
 		}
@@ -101,6 +102,45 @@ Entity.prototype.collidesWith = function(e) {
 	var eBottom = parseInt(e.getY()) + parseInt(e.height);
 	return ((sRight>=eLeft) && (sLeft<=eRight) && (sBottom>=eTop) && (sTop<=eBottom));
 	}
+Entity.prototype.preventCollisionWith = function(e) {
+	if(!e.solid) return;
+	var sLeft = parseInt(this.getX());
+	var sRight = parseInt(this.getX()) + parseInt(this.width);
+	var sTop = parseInt(this.getY());
+	var sBottom = parseInt(this.getY()) + parseInt(this.height);
+	var sNLeft = sLeft + this.xSpeed;
+	var sNRight = sRight + this.xSpeed;
+	var sNTop = sTop + this.ySpeed;
+	var sNBottom = sBottom + this.ySpeed;
+	var eLeft = parseInt(e.getX());
+	var eRight = parseInt(e.getX()) + parseInt(e.width);
+	var eTop = parseInt(e.getY());
+	var eBottom = parseInt(e.getY()) + parseInt(e.height);
+	if(this.xSpeed > 0) { // moving right
+		if((sLeft < eLeft) && (sNRight >= eLeft) && (sBottom-1>eTop) && (sTop<eBottom-1)) { // collision from right ahead
+			this.setX(eLeft-this.width);
+			this.xSpeed = 0;
+			}
+		}
+	if(this.xSpeed < 0) { // moving left
+		if((sRight > eRight) && (sNLeft <= eRight) && (sBottom-1>eTop) && (sTop<eBottom-1)) { // collision from left ahead
+			this.setX(eRight);
+			this.xSpeed = 0;
+			}
+		}
+	if(this.ySpeed < 0) { // moving down
+		if((sBottom > eBottom) && (sNTop >= eBottom) && (sRight-1>eLeft) && (sLeft<eRight-1)) { // collision from below ahead
+			this.setY(eBottom);
+			this.ySpeed = 0;
+			}
+		}
+	if(this.ySpeed > 0) { // moving up
+		if((sTop < eTop) && (sNBottom >= eTop) && (sRight-1>eLeft) && (sLeft<eRight-1)) { // collision from above ahead
+			this.setY(eTop-this.height);
+			this.ySpeed = 0;
+			}
+		}
+	}
 Entity.prototype.tick = function() {
 	var nextX = parseInt(this.getX()) + parseInt(this.xSpeed);
 	var nextY = parseInt(this.getY()) + parseInt(this.ySpeed);
@@ -125,7 +165,7 @@ Player.prototype.constructor = Player;
 function Player(fld) {
 	var nd = document.createElement('img');
 	nd.src = 'bb.png';
-	this.init(0, 0, nd, fld, 10, 10, true);
+	this.init(0, 0, nd, fld, 10, 10, true, false);
 	this.jumplock = 0;
 	}
 Player.prototype.jump = function() {
@@ -141,7 +181,7 @@ function SolidBlock(fld, x, y, w, h) {
 	nd.innerHTML = '.';
 	nd.style.width = w+'px';
 	nd.style.height = h+'px';
-	this.init(x, y, nd, fld, w, h, true);
+	this.init(x, y, nd, fld, w, h, true, false);
 	}
 /* - - - - - - - [Class] GameField - - - - - - - */
 function GameField() {}
@@ -169,10 +209,9 @@ function Game() {
 	this.entities.push(sb);
 	this.currKeyCodes = [] ;
 	this.gravity = 1;
-	this.ticks = 0;
 	}
 Game.prototype.tick = function() {
-	this.ticks++;
+	// keyboard input
 	for(var i=0; i<this.currKeyCodes.length; i++) {
 		switch(this.currKeyCodes[i]) {
 			case 32: //space bar
@@ -188,7 +227,6 @@ Game.prototype.tick = function() {
 				game.player.accX(1);
 				break;
 			case 40: //down
-				//game.player.accY(1);
 				break;
 			}
 		}
@@ -198,17 +236,14 @@ Game.prototype.tick = function() {
 	if(this.currKeyCodes.indexOf(32) == -1 && this.currKeyCodes.indexOf(38) == -1) {
 		game.player.jumplock = 0;
 		}
-	document.getElementById('debug').innerHTML = this.currKeyCodes.toString();
+	// entities
 	for(var i=0; i<this.entities.length; i++) {
 		var e = this.entities[i];
 		if((parseInt(e.getY())+parseInt(e.height))<this.field.height) {
 			e.accY(this.gravity);
 			}
-		if(i>0) { //for all entities except player
-			if(this.player.collidesWith(e)) {
-				this.player.xSpeed = 0;
-				this.player.ySpeed = 0;
-				}
+		if(i>0) { // for all entities except player
+			this.player.preventCollisionWith(e);
 			}
 		e.tick();
 		}
