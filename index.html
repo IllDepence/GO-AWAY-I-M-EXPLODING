@@ -1,0 +1,159 @@
+<!DOCTYPE HTML>
+
+<!-- - - - - - - - - - - - - - - - - <html> - - - - - - - - - - - - - - - - -->
+<html>
+
+<!-- - - - - - - - - - - - - - - - - <head> - - - - - - - - - - - - - - - - -->
+<head>
+<title>10 Seconds</title>
+
+<link rel="SHORTCUT ICON" href="favicon.ico" />
+<link rel="stylesheet" type="text/css" href="style.css" />
+<meta charset="utf-8" />
+
+<!-- - - - - - - - - - - - - - - - - <style> - - - - - - - - - - - - - - - - -->
+<style type="text/css">
+* {
+margin: 0;
+padding: 0;
+}
+#gameField {
+background-color: #f0f0f0;
+position: absolute;
+top: 10px;
+left: 10px;
+}
+.entity {
+position: absolute;
+}
+</style>
+<!-- - - - - - - - - - - - - - - - - </style> - - - - - - - - - - - - - - - - -->
+
+</head>
+<!-- - - - - - - - - - - - - - - - - </head> - - - - - - - - - - - - - - - - -->
+
+
+<!-- - - - - - - - - - - - - - - - - <body> - - - - - - - - - - - - - - - - -->
+<body>
+
+</body>
+<!-- - - - - - - - - - - - - - - - - </body> - - - - - - - - - - - - - - - - -->
+<div id="gameField"></div>
+<script>
+/* - - - - - - - [Class] Entity - - - - - - - */
+function Entity() {}
+Entity.prototype.setX = function(x) {
+	this.node.style.left = x+'px';
+	}
+Entity.prototype.setY = function(y) {
+	this.node.style.top = y+'px';
+	}
+Entity.prototype.init = function(x, y, nd, prt, wi, he, sld) {
+	if(prt instanceof HTMLElement) {
+		this.node = nd;
+		this.parentNode = prt;
+		this.node.className = 'entity';
+		this.setX(x);
+		this.setY(y);
+		this.parentNode.appendChild(this.node);
+		this.width = wi;
+		this.height = he;
+		this.solid = sld;
+		this.xSpeed = 0; // change of x in one tick
+		this.ySpeed = 0; //     "     y     "
+		}
+	}
+Entity.prototype.getX = function() {
+	return this.node.style.left.substr(0, this.node.style.left.length-2);
+	}
+Entity.prototype.getY = function() {
+	return this.node.style.top.substr(0, this.node.style.top.length-2);
+	}
+Entity.prototype.accX = function(d) {
+	this.xSpeed = this.xSpeed-d;
+	}
+Entity.prototype.accY = function(d) {
+	this.ySpeed = this.ySpeed-d;
+	}
+Entity.prototype.tick = function() {
+	this.setX(parseInt(this.getX()) + parseInt(this.xSpeed));
+	this.setY(parseInt(this.getY()) + parseInt(this.ySpeed));
+	}
+/* - - - - - - - [Class] Player - - - - - - - */
+Player.prototype = new Entity();
+Player.prototype.constructor = Player;
+function Player(fld) {
+	var nd = document.createElement('img');
+	nd.src = 'bb.png';
+	this.init(20, 20, nd, fld, 10, 10, true);
+	}
+/* - - - - - - - [Class] gameField - - - - - - - */
+function GameField() {}
+GameField.prototype.init = function(width, height, nd) {
+	this.node = nd;
+	if(this.node instanceof HTMLElement) {
+		this.node.style.width = width+'px';
+		this.node.style.height = height+'px';
+		}
+	}
+/* - - - - - - - [Class] Game - - - - - - - */
+function Game() {
+	this.field = new GameField();
+	this.field.init(700, 400, document.getElementById('gameField'));
+	this.entities = [];
+	var plyr = new Player(this.field.node);
+	this.player = plyr;
+	this.entities.push(plyr);
+	this.currKeyCode = -1;
+	}
+Game.prototype.tick = function() {
+	switch(game.currKeyCode) {
+		case 37: //left
+			game.player.accX(1);
+			break;
+		case 38: //up
+			game.player.accY(1);
+			break;
+		case 39: //right
+			game.player.accX(-1);
+			break;
+		case 40: //down
+			game.player.accY(-1);
+			break;
+		}
+	for(var i=0; i<this.entities.length; i++) {
+		this.entities[i].tick();
+		}
+	}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+var game = new Game();
+//var gameInfo = document.getElementById('gameInfo');
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+document.onkeydown = function(e) {
+	var keyCode = (window.event) ? event.keyCode : e.keyCode;
+	game.currKeyCode = keyCode;
+	}
+
+document.onkeyup = function(e) {
+	//var keyCode = (window.event) ? event.keyCode : e.keyCode;
+	//game.currKeyCode = -1;
+	}
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+var fps = 60;
+function draw() {
+	setTimeout(function() {
+		requestAnimationFrame(draw);
+		//game logic
+		}, 1000 / fps);
+		game.tick();
+	}
+draw();
+
+</script>
+
+</html>
+<!-- - - - - - - - - - - - - - - - - </html> - - - - - - - - - - - - - - - - -->
