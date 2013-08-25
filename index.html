@@ -81,6 +81,7 @@ left: 800px;
 	<br />
 	<p><strong>Created for</strong> <a href="http://www.ludumdare.com/compo/ludum-dare-27/">Ludum Dare 27</a></p>
 	<p><strong>Code on</strong> <a href="https://github.com/IllDepence/10-Seconds">GitHub</a></p>
+	<p><strong>License</strong> <a href="http://www.wtfpl.net/txt/copying/">WTFPL</a></p>
 	<br />
 	<p><strong>Story</strong></p>
 	<p style="width: 1000px;">Someone tied a bomb onto you and two precious friends are about to visit. Prevent their death and you&#39;ll be sent back to the living. Unfortunately, people seem to misunderstand your reincarnation resulting in an evergrowing popularity of your person. Even when you&#39;re sent back to the most remote and bizarre places there&#39;s always at least one fruitcake trying to get near you.</p>
@@ -232,7 +233,7 @@ function Player(fld, x, y) {
 	this.intvID = self.setInterval((function(self) {return function() {self.updateBomb();}})(this), 1000);
 	}
 Player.prototype.jump = function() {
-	if(this.ySpeed == 0 && this.jumplock==0) this.accY(-15);
+	if(this.ySpeed == 0 && this.jumplock==0) this.accY(-16);
 	this.jumplock = 1;
 	}
 Player.prototype.walk = function(d) {
@@ -274,6 +275,8 @@ Player.prototype.updateExplosion = function() {
 	if(this.currExplFrame > 5) {
 		self.clearInterval(this.intvID);
 		this.node.src = '';
+		this.setX(this.getX()+267);
+		this.setY(this.getY()+187);
 		}
 	else {
 		this.node.src = 'explosion'+(++this.currExplFrame)+'.png';
@@ -556,17 +559,168 @@ Game.prototype.level = function(num) {
 			this.field.init(5000, 700, 1200, 700, document.getElementById('gameField'), 'bg4.jpg');
 			this.entities = [];
 			// player
-			var plyr = new Player(this.field, 100, 225);
+			var plyr = new Player(this.field, 200, 225);
 			this.player = plyr;
 			this.entities.push(plyr);
+			// firends
+			var frnd1 = new Friend(this.field, 100, 225, 5, 2);
+			this.entities.push(frnd1);
 			// solid blocks
-			var sb = new SolidBlock(this.field, 70, 345, 2000, 10, true);
-			this.entities.push(sb);
+			var sb1 = new SolidBlock(this.field, 70, 345, 1450, 10, true);
+			this.entities.push(sb1);
+			var sb2 = new SolidBlock(this.field, 70, 505, 1550, 10, true);
+			this.entities.push(sb2);
+			var sb3 = new SolidBlock(this.field, 1200, 0, 10, 355, true);
+			this.entities.push(sb3);
+			var sb4 = new SolidBlock(this.field, 3000, 505, 1000, 10, true);
+			this.entities.push(sb4);
+			var sb4 = new SolidBlock(this.field, 4970, 385, 30, 10, true);
+			this.entities.push(sb4);
+			var sb5 = new SolidBlock(this.field, 4940, 455, 30, 10, true);
+			this.entities.push(sb5);
 			// kill blocks
-			var kb = new KillBlock(this.field, 300, 680, 200, false);
+			var kb = new KillBlock(this.field, 0, 680, 5000, false);
 			this.entities.push(kb);
+			// statues
+			var st1 = new Statue(this.field, 4980, 355, true);
+			this.entities.push(st1);
 			break;
 		case 6:
+			this.field.init(5000, 700, 1200, 700, document.getElementById('gameField'), 'bg4.jpg');
+			this.entities = [];
+			// player
+			var plyr = new Player(this.field, 100, 125);
+			this.player = plyr;
+			this.entities.push(plyr);
+			// firends
+			var frnd1 = new Friend(this.field, 4650, 330, 4, 3);
+			this.entities.push(frnd1);
+			var frnd2 = new Friend(this.field, 4550, 330, 4, 3);
+			this.entities.push(frnd2);
+			// solid blocks
+			var sb1 = new SolidBlock(this.field, 70, 245, 3400, 10, true);
+			this.entities.push(sb1);
+			var sb2 = new SolidBlock(this.field, 3570, 245, 1360, 10, true);
+			this.entities.push(sb2);
+			var sb3 = new SolidBlock(this.field, 4700, 600, 300, 10, true);
+			this.entities.push(sb3);
+			var sb4 = new SolidBlock(this.field, 4700, 450, 10, 150, true);
+			this.entities.push(sb4);
+			var sb5 = new SolidBlock(this.field, 4000, 450, 700, 10, true);
+			this.entities.push(sb5);
+			// kill blocks
+			var kb = new KillBlock(this.field, 0, 680, 5000, false);
+			this.entities.push(kb);
+			// statues
+			var st1 = new Statue(this.field, 4900, 215, true);
+			this.entities.push(st1);
+			var st2 = new Statue(this.field, 3525, 550, true);
+			this.entities.push(st2);
+			break;
+		case 7:
+			this.field.init(1200, 700, 1200, 700, document.getElementById('gameField'), 'bg4.jpg');
+			this.entities = [];
+			// player
+			var plyr = new Player(this.field, 150, 580);
+			this.player = plyr;
+			this.entities.push(plyr);
+			// firends
+			var frnd1 = new Friend(this.field, 600, 125, 4, 3);
+			this.entities.push(frnd1);
+			// solid blocks
+			var sb1 = new SolidBlock(this.field, 400, 245, 400, 10, true);
+			this.entities.push(sb1);
+			var sb2 = new SolidBlock(this.field, 0, 620, 20, 10, true);
+			this.entities.push(sb2);
+			var sb3 = new SolidBlock(this.field, 1180, 620, 20, 10, true);
+			this.entities.push(sb3);
+			// kill blocks
+			var kb = new KillBlock(this.field, 300, 680, 600, false);
+			this.entities.push(kb);
+			// statues
+			var st1 = new Statue(this.field, 590, 600, true);
+			this.entities.push(st1);
+			var st2 = new Statue(this.field, 0, 380, true);
+			this.entities.push(st2);
+			var st3 = new Statue(this.field, 1181, 380, true);
+			this.entities.push(st3);
+			break;
+		case 8:
+			this.field.init(1200, 700, 1200, 700, document.getElementById('gameField'), 'bg5.jpg');
+			this.entities = [];
+			// player
+			var plyr = new Player(this.field, 1100, 580);
+			this.player = plyr;
+			this.entities.push(plyr);
+			// firends
+			var frnd1 = new Friend(this.field, 0, 580, 20, 15);
+			this.entities.push(frnd1);
+			// solid blocks
+			var sb1 = new SolidBlock(this.field, 0, 470, 10, 20, true);
+			this.entities.push(sb1);
+			// statues
+			var st1 = new Statue(this.field, 100, 250, true);
+			this.entities.push(st1);
+			break;
+		case 9:
+			this.field.init(1200, 700, 1200, 700, document.getElementById('gameField'), 'bg6.jpg');
+			this.entities = [];
+			// player
+			var plyr = new Player(this.field, 0, 580);
+			this.player = plyr;
+			this.entities.push(plyr);
+			// firends
+			var frnd1 = new Friend(this.field, 0, 280, 5, 2);
+			this.entities.push(frnd1);
+			// solid blocks
+			var sb1 = new SolidBlock(this.field, 0, 400, 100, 10, true);
+			this.entities.push(sb1);
+			var sb2 = new SolidBlock(this.field, 100, 0, 10, 300, false);
+			this.entities.push(sb2);
+			var sb3 = new SolidBlock(this.field, 300, 150, 10, 210, false);
+			this.entities.push(sb3);
+			// kill blocks
+			var kb = new KillBlock(this.field, 371, 680, 400, false);
+			this.entities.push(kb);
+			// statues
+			var st1 = new Statue(this.field, 311, 0, false);
+			this.entities.push(st1);
+			var st2 = new Statue(this.field, 1150, 670, false);
+			this.entities.push(st2);
+			var st3 = new Statue(this.field, 50, 370, true);
+			this.entities.push(st3);
+			break;
+		case 10:
+			this.field.init(2400, 700, 1200, 700, document.getElementById('gameField'), 'bg6.jpg');
+			this.entities = [];
+			// player
+			var plyr = new Player(this.field, 240, 580);
+			this.player = plyr;
+			this.entities.push(plyr);
+			// firends
+			var frnd1 = new Friend(this.field, 2300, 580, 6, 3);
+			this.entities.push(frnd1);
+			var frnd2 = new Friend(this.field, 2100, 580, 5, 4);
+			this.entities.push(frnd2);
+			var frnd3 = new Friend(this.field, 1900, 580, 4, 2);
+			this.entities.push(frnd3);
+			var frnd4 = new Friend(this.field, 0, 280, 4, 2);
+			this.entities.push(frnd4);
+			// solid blocks
+			var sb1 = new SolidBlock(this.field, 1800, 625, 50, 75, true);
+			this.entities.push(sb1);
+			var sb2 = new SolidBlock(this.field, 0, 400, 50, 300, true);
+			this.entities.push(sb2);
+			// kill blocks
+			var kb = new KillBlock(this.field, 1780, 680, 20, false);
+			this.entities.push(kb);
+			// statues
+			var st1 = new Statue(this.field, 1750, 670, false);
+			this.entities.push(st1);
+			var st2 = new Statue(this.field, 15, 370, true);
+			this.entities.push(st2);
+			break;
+		case 11:
 			this.levelDisp.innerHTML = '';
 			this.scoreDisp.style.top = '260px';
 			this.field.init(1200, 700, 1200, 700, document.getElementById('gameField'), 'bg_end.gif');
