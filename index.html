@@ -339,7 +339,7 @@ function Game() {
 	this.field = new GameField();
 	this.currKeyCodes = [] ;
 	this.gravity = 1;
-	this.currLevel = 0;
+	this.currLevel = 2;
 	this.xShift = 0;
 	this.moveMargin = 300;
 	// intro
@@ -386,22 +386,26 @@ Game.prototype.level = function(num) {
 			this.entities.push(frnd6);
 			break;
 		case 2:
-			this.field.init(5000, 700, 1200, 700, document.getElementById('gameField'), 'bg2.jpg');
+			this.field.init(2000, 700, 1200, 700, document.getElementById('gameField'), 'bg2.jpg');
 			this.entities = [];
 			// player
 			var plyr = new Player(this.field, 600, 580);
 			this.player = plyr;
 			this.entities.push(plyr);
 			// firends
-			var frnd1 = new Friend(this.field, 100, 580, 10, 3);
+			var frnd1 = new Friend(this.field, 1000, 580, 10, 3);
 			this.entities.push(frnd1);
-			var frnd2 = new Friend(this.field, 200, 580, 10, 4);
+			var frnd2 = new Friend(this.field, 2000, 580, 10, 4);
 			this.entities.push(frnd2);
-			var frnd3 = new Friend(this.field, 1000, 580, 10, 5);
+			var frnd3 = new Friend(this.field, 1500, 580, 10, 5);
 			this.entities.push(frnd3);
+			var frnd4 = new Friend(this.field, 1800, 580, 15, 5);
+			this.entities.push(frnd4);
 			// solid blocks
-			var sb = new SolidBlock(this.field, 100, 400, 300, 50, true);
-			this.entities.push(sb);
+			var sb1 = new SolidBlock(this.field, 200, 500, 200, 30, true);
+			this.entities.push(sb1);
+			var sb2 = new SolidBlock(this.field, 400, 400, 1500, 60, true);
+			this.entities.push(sb2);
 			break;
 		}
 	}
