@@ -23,6 +23,7 @@ position: absolute;
 top: 10px;
 left: 10px;
 border: 1px solid #333;
+overflow: hidden;
 }
 .entity {
 position: absolute;
@@ -166,9 +167,8 @@ Entity.prototype.preventCollisionWith = function(e) {
 		}
 	}
 Entity.prototype.tick = function() {
-	if(this.floating) return;
 	var nextX = this.getX() + this.xSpeed;
-	var nextY = this.getY() + this.ySpeed;
+	if(!this.floating) var nextY = this.getY() + this.ySpeed;
 	if(nextX>=0 && (nextX+this.width)<this.field.width) {
 		this.setX(nextX);
 		}
@@ -176,12 +176,14 @@ Entity.prototype.tick = function() {
 		this.xSpeed = 0;
 		this.setX(nextX<0 ? 0 : this.field.width-this.width);
 		}
-	if(nextY>=0 && (nextY+this.height)<this.field.height) {
-		this.setY(nextY);
-		}
-	else {
-		this.ySpeed = 0;
-		this.setY(nextY<0 ? 0 : this.field.height-this.height);
+	if(!this.floating) {
+		if(nextY>=0 && (nextY+this.height)<this.field.height) {
+			this.setY(nextY);
+			}
+		else {
+			this.ySpeed = 0;
+			this.setY(nextY<0 ? 0 : this.field.height-this.height);
+			}
 		}
 	}
 /* - - - - - - - [Class] Player - - - - - - - */
@@ -193,11 +195,17 @@ function Player(fld, x, y) {
 	nd.src = 'player_bomb_'+this.currBombTimer+'.png';
 	this.init(x, y, nd, fld, 60, 120, true, false);
 	this.jumplock = 0;
+	this.maxSpeed = 50;
 	this.intvID = self.setInterval((function(self) {return function() {self.updateBomb();}})(this), 1000);
 	}
 Player.prototype.jump = function() {
 	if(this.ySpeed == 0 && this.jumplock==0) this.accY(-15);
 	this.jumplock = 1;
+	}
+Player.prototype.walk = function(d) {
+	if(Math.abs(this.xSpeed)<this.maxSpeed) {
+		this.accX(d);
+		}
 	}
 Player.prototype.updateBomb = function() {
 	if(this.currBombTimer==1) {
@@ -215,8 +223,8 @@ Player.prototype.updateBomb = function() {
 		this.explode();
 		}
 	else {
-		//this.node.src = 'player_bomb_'+(--this.currBombTimer)+'.png';
-		this.node.src = 'player_bomb_'+(this.currBombTimer)+'.png';
+		this.node.src = 'player_bomb_'+(--this.currBombTimer)+'.png';
+		//this.node.src = 'player_bomb_'+(this.currBombTimer)+'.png';
 		}
 	}
 Player.prototype.updateExplosion = function() {
@@ -340,9 +348,8 @@ function Game() {
 Game.prototype.level = function(num) {
 	this.levelDisp.innerHTML = 'Level: '+num;
 	switch(num) {
-		/*
 		case 0:
-			this.field.init(1200, 700, document.getElementById('gameField'), 'bg0.jpg');
+			this.field.init(5000, 700, 1200, 700, document.getElementById('gameField'), 'bg0.jpg');
 			this.entities = [];
 			// player
 			var plyr = new Player(this.field, 0, 580);
@@ -357,28 +364,29 @@ Game.prototype.level = function(num) {
 			var sb = new SolidBlock(this.field, 300, 650, 20, 50, false);
 			this.entities.push(sb);
 			break;
-		*/
-		case 0:
-			this.field.init(5000, 700, 1200, 700, document.getElementById('gameField'), 'bg0.jpg');
-			this.entities = [];
-			// player
-			var plyr = new Player(this.field, 0, 580);
-			this.player = plyr;
-			this.entities.push(plyr);
-			break;
 		case 1:
-			this.field.init(1200, 700, document.getElementById('gameField'), 'bg1.jpg');
+			this.field.init(5000, 700, 1200, 700, document.getElementById('gameField'), 'bg1.jpg');
 			this.entities = [];
 			// player
 			var plyr = new Player(this.field, 0, 580);
 			this.player = plyr;
 			this.entities.push(plyr);
 			// firends
-			var frnd = new Friend(this.field, 500, 580, 10, 5);
-			this.entities.push(frnd);
+			var frnd1 = new Friend(this.field, 500, 580, 10, 5);
+			this.entities.push(frnd1);
+			var frnd2 = new Friend(this.field, 4900, 580, 3, 1);
+			this.entities.push(frnd2);
+			var frnd3 = new Friend(this.field, 4700, 580, 3, 2);
+			this.entities.push(frnd3);
+			var frnd4 = new Friend(this.field, 4500, 580, 4, 3);
+			this.entities.push(frnd4);
+			var frnd5 = new Friend(this.field, 4200, 580, 5, 4);
+			this.entities.push(frnd5);
+			var frnd6 = new Friend(this.field, 4000, 580, 1, 1);
+			this.entities.push(frnd6);
 			break;
 		case 2:
-			this.field.init(1200, 700, document.getElementById('gameField'), 'bg1.jpg');
+			this.field.init(5000, 700, 1200, 700, document.getElementById('gameField'), 'bg2.jpg');
 			this.entities = [];
 			// player
 			var plyr = new Player(this.field, 600, 580);
@@ -392,7 +400,7 @@ Game.prototype.level = function(num) {
 			var frnd3 = new Friend(this.field, 1000, 580, 10, 5);
 			this.entities.push(frnd3);
 			// solid blocks
-			var sb = new SolidBlock(this.field, 100, 400, 400, 10, true);
+			var sb = new SolidBlock(this.field, 100, 400, 300, 50, true);
 			this.entities.push(sb);
 			break;
 		}
@@ -433,13 +441,13 @@ Game.prototype.tick = function() {
 				game.player.jump();
 				break;
 			case 37: //left
-				game.player.accX(-1);
+				game.player.walk(-1);
 				break;
 			case 38: //up
 				game.player.jump();
 				break;
 			case 39: //right
-				game.player.accX(1);
+				game.player.walk(1);
 				break;
 			case 40: //down
 				break;
@@ -475,7 +483,6 @@ Game.prototype.tick = function() {
 		var relPlayerXR = this.player.getShiftedX() + this.player.width;
 		var relPlayerXL = this.player.getShiftedX();
 		var xShiftL = (absPlayerXR-dispMaxR)-this.player.width+(this.field.dispWidth-(this.moveMargin*2))+leftCompensate;
-		document.getElementById('debug').innerHTML = xShiftL+' ';
 
 		if(this.player.xSpeed > 0 && relPlayerXR >= dispMaxR) {
 			this.field.setShiftX(xShiftR);
