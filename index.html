@@ -22,6 +22,7 @@ background-color: #f0f0f0;
 position: absolute;
 top: 10px;
 left: 10px;
+border: 1px solid #333;
 }
 .entity {
 position: absolute;
@@ -39,7 +40,7 @@ font-family: sans-serif;
 color: #f03030;
 }
 #debug {
-position: absolute;
+position: fixed;
 top: 20px;
 left: 800px;
 }
@@ -62,13 +63,16 @@ left: 800px;
 /* - - - - - - - [Class] Entity - - - - - - - */
 function Entity() {}
 Entity.prototype.setX = function(x) {
-	this.node.style.left = x+'px';
+	this.unShiftedX = x;
+	this.node.style.left = (x-this.xShift)+'px';
 	}
 Entity.prototype.setY = function(y) {
 	this.node.style.top = y+'px';
 	}
 Entity.prototype.init = function(x, y, nd, fld, wi, he, sld, flt) {
 	this.field = fld;
+	this.xShift = 0;
+	this.unShiftedX = x;
 	prt = fld.node;
 	if(prt instanceof HTMLElement) {
 		this.node = nd;
@@ -86,10 +90,21 @@ Entity.prototype.init = function(x, y, nd, fld, wi, he, sld, flt) {
 	this.ySpeed = 0; //     "     y     "
 	}
 Entity.prototype.getX = function() {
+	return this.unShiftedX;
+	}
+Entity.prototype.getShiftedX = function() {
 	return parseInt(this.node.style.left.substr(0, this.node.style.left.length-2));
 	}
 Entity.prototype.getY = function() {
 	return parseInt(this.node.style.top.substr(0, this.node.style.top.length-2));
+	}
+Entity.prototype.shiftX = function(d) {
+	this.xShift += d;
+	var currDispX = this.getX();
+	this.setX(currDispX-d);
+	}
+Entity.prototype.setShiftX = function(s) {
+	this.xShift = s;
 	}
 Entity.prototype.accX = function(d) {
 	this.xSpeed = this.xSpeed+d;
@@ -200,7 +215,8 @@ Player.prototype.updateBomb = function() {
 		this.explode();
 		}
 	else {
-		this.node.src = 'player_bomb_'+(--this.currBombTimer)+'.png';
+		//this.node.src = 'player_bomb_'+(--this.currBombTimer)+'.png';
+		this.node.src = 'player_bomb_'+(this.currBombTimer)+'.png';
 		}
 	}
 Player.prototype.updateExplosion = function() {
@@ -272,28 +288,39 @@ Friend.prototype.jump = function() {
 /* - - - - - - - [Class] SolidBlock - - - - - - - */
 SolidBlock.prototype = new Entity();
 SolidBlock.prototype.constructor = SolidBlock;
-function SolidBlock(fld, x, y, w, h) {
+function SolidBlock(fld, x, y, w, h, fl) {
 	var nd = document.createElement('div');
 	nd.className = 'solidBlock'
 	nd.innerHTML = '.';
 	nd.style.width = w+'px';
 	nd.style.height = h+'px';
-	this.init(x, y, nd, fld, w, h, true, false);
+	this.init(x, y, nd, fld, w, h, true, fl);
 	}
 /* - - - - - - - [Class] GameField - - - - - - - */
 function GameField() {}
-GameField.prototype.init = function(w, h, nd, bg) {
+GameField.prototype.init = function(w, h, dispW, dispH, nd, bg) {
 	this.node = nd;
 	this.width = w;
 	this.height = h;
+	this.dispWidth = dispW;
+	this.dispHeight = dispH;
+	this.xShift = 0;
 	if(this.node instanceof HTMLElement) {
-		this.node.style.width = w+'px';
-		this.node.style.height = h+'px';
+		this.node.style.width = dispW+'px';
+		this.node.style.height = dispH+'px';
 		if(bg != null) {
 			this.node.style.backgroundImage = "url('"+bg+"')";
 			this.node.style.backgroundRepeat = 'repeat';
 			}
 		}
+	}
+GameField.prototype.shiftX = function(d) {
+	this.xShift += d;
+	this.node.style.backgroundPosition = '-'+this.xShift+'px 0px, left';
+	}
+GameField.prototype.setShiftX = function(s) {
+	this.xShift = s;
+	this.node.style.backgroundPosition = '-'+this.xShift+'px 0px, left';
 	}
 /* - - - - - - - [Class] Game - - - - - - - */
 function Game() {
@@ -305,12 +332,15 @@ function Game() {
 	this.currKeyCodes = [] ;
 	this.gravity = 1;
 	this.currLevel = 0;
+	this.xShift = 0;
+	this.moveMargin = 300;
 	// intro
 	this.intro();
 	}
 Game.prototype.level = function(num) {
 	this.levelDisp.innerHTML = 'Level: '+num;
 	switch(num) {
+		/*
 		case 0:
 			this.field.init(1200, 700, document.getElementById('gameField'), 'bg0.jpg');
 			this.entities = [];
@@ -319,13 +349,22 @@ Game.prototype.level = function(num) {
 			this.player = plyr;
 			this.entities.push(plyr);
 			// firends
-			var frnd = new Friend(this.field, 500, 580, 5, 1);
-			this.entities.push(frnd);
+			var frnd1 = new Friend(this.field, 500, 580, 5, 1);
+			this.entities.push(frnd1);
 			var frnd2 = new Friend(this.field, 700, 580, 3, 1);
 			this.entities.push(frnd2);
 			// solid blocks
-			var sb = new SolidBlock(this.field, 300, 650, 20, 50);
+			var sb = new SolidBlock(this.field, 300, 650, 20, 50, false);
 			this.entities.push(sb);
+			break;
+		*/
+		case 0:
+			this.field.init(5000, 700, 1200, 700, document.getElementById('gameField'), 'bg0.jpg');
+			this.entities = [];
+			// player
+			var plyr = new Player(this.field, 0, 580);
+			this.player = plyr;
+			this.entities.push(plyr);
 			break;
 		case 1:
 			this.field.init(1200, 700, document.getElementById('gameField'), 'bg1.jpg');
@@ -338,14 +377,34 @@ Game.prototype.level = function(num) {
 			var frnd = new Friend(this.field, 500, 580, 10, 5);
 			this.entities.push(frnd);
 			break;
+		case 2:
+			this.field.init(1200, 700, document.getElementById('gameField'), 'bg1.jpg');
+			this.entities = [];
+			// player
+			var plyr = new Player(this.field, 600, 580);
+			this.player = plyr;
+			this.entities.push(plyr);
+			// firends
+			var frnd1 = new Friend(this.field, 100, 580, 10, 3);
+			this.entities.push(frnd1);
+			var frnd2 = new Friend(this.field, 200, 580, 10, 4);
+			this.entities.push(frnd2);
+			var frnd3 = new Friend(this.field, 1000, 580, 10, 5);
+			this.entities.push(frnd3);
+			// solid blocks
+			var sb = new SolidBlock(this.field, 100, 400, 400, 10, true);
+			this.entities.push(sb);
+			break;
 		}
 	}
 Game.prototype.intro = function() {
-	this.field.init(1200,700, document.getElementById('gameField'), 'cover.png');
+	this.field.init(0, 0, 1200,700, document.getElementById('gameField'), 'cover.png');
 	this.field.node.title = 'click to start';
 	this.field.node.onclick = (function(self) {return function() {self.start();}})(this);
 	}
 Game.prototype.start = function() {
+	this.field.node.title = '';
+	this.field.node.onclick = '';
 	this.level(this.currLevel);
 	draw();
 	}
@@ -361,8 +420,9 @@ Game.prototype.end = function() {
 		this.level(++this.currLevel);
 		}
 	else {
-		this.currLevel = 0;
-		this.level(0);
+		//this.currLevel = 0;
+		//this.level(0);
+		this.level(this.currLevel);
 		}
 	}
 Game.prototype.tick = function() {
@@ -399,6 +459,31 @@ Game.prototype.tick = function() {
 			}
 		if(i>0) { // for all entities except player
 			this.player.preventCollisionWith(e);
+			}
+		// x shift
+		var absPlayerXR = this.player.getX()+this.player.width;
+		var absPlayerXL = this.player.getX();
+		var absShiftBorderR = this.field.width-this.moveMargin;
+		var absShiftBorderL = this.moveMargin;
+		var dispMaxR = this.field.dispWidth-this.moveMargin;
+		var dispMaxL = this.moveMargin;
+
+		var rightCompensate = (absPlayerXR-absShiftBorderR>0 ? absPlayerXR-absShiftBorderR : 0);
+		var leftCompensate = (absShiftBorderL-absPlayerXL>0 ? absShiftBorderL-absPlayerXL : 0);
+		var xShiftR = (absPlayerXR-dispMaxR>0 ? absPlayerXR-dispMaxR-rightCompensate : 0);
+
+		var relPlayerXR = this.player.getShiftedX() + this.player.width;
+		var relPlayerXL = this.player.getShiftedX();
+		var xShiftL = (absPlayerXR-dispMaxR)-this.player.width+(this.field.dispWidth-(this.moveMargin*2))+leftCompensate;
+		document.getElementById('debug').innerHTML = xShiftL+' ';
+
+		if(this.player.xSpeed > 0 && relPlayerXR >= dispMaxR) {
+			this.field.setShiftX(xShiftR);
+			e.setShiftX(xShiftR);
+			}
+		if(this.player.xSpeed < 0 && relPlayerXL <= dispMaxL) {
+			this.field.setShiftX(xShiftL);
+			e.setShiftX(xShiftL);
 			}
 		if(e instanceof Friend) {
 			e.follow(this.player);
