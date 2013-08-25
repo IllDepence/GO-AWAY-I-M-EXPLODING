@@ -27,6 +27,8 @@ overflow: hidden;
 }
 .entity {
 position: absolute;
+font-size: 1px;
+line-height: 1px;
 }
 .solidBlock {
 background-image: url('darkgreypixel.png');
@@ -36,13 +38,19 @@ background-repeat: repeat;
 background-image: url('spike.png');
 background-repeat: repeat-x;
 }
-#levelDisp {
+.statue {
+background-image: url('statue.gif');
+background-repeat: no-repeat;
+}
+#levelDisp,
+#scoreDisp {
 position: absolute;
 top: -100px;
 left: -100px;
 font-size: 30px;
 font-family: sans-serif;
-color: #f03030;
+color: #300;
+text-shadow: 2px 2px #fff;
 }
 #debug {
 position: fixed;
@@ -59,10 +67,9 @@ left: 800px;
 <!-- - - - - - - - - - - - - - - - - <body> - - - - - - - - - - - - - - - - -->
 <body>
 
-</body>
-<!-- - - - - - - - - - - - - - - - - </body> - - - - - - - - - - - - - - - - -->
 <div id="gameField"></div>
 <div id="levelDisp"></div>
+<div id="scoreDisp"></div>
 <div id="debug"></div>
 <script>
 /* - - - - - - - [Class] Entity - - - - - - - */
@@ -202,6 +209,7 @@ function Player(fld, x, y) {
 	this.jumplock = 0;
 	this.maxSpeed = 50;
 	this.injured = '';
+	this.exploded = false;
 	this.intvID = self.setInterval((function(self) {return function() {self.updateBomb();}})(this), 1000);
 	}
 Player.prototype.jump = function() {
@@ -226,6 +234,7 @@ Player.prototype.updateBomb = function() {
 		this.currExplFrame = 0;
 		this.node.src = 'explosion'+this.currExplFrame+'.png';
 		this.intvID = self.setInterval((function(self) {return function() {self.updateExplosion();}})(this), 150);
+		this.exploded = true;
 		this.explode();
 		}
 	else {
@@ -235,7 +244,7 @@ Player.prototype.updateBomb = function() {
 	}
 Player.prototype.injure = function() {
 	this.jumplock = 1;
-	if(this.injured != 'i') {
+	if(this.injured != 'i' && !this.exploded) {
 		this.xSpeed = 0;
 		this.maxSpeed = 0;
 		this.injured = 'i';
@@ -332,10 +341,28 @@ KillBlock.prototype.constructor = KillBlock;
 function KillBlock(fld, x, y, w, fl) {
 	var nd = document.createElement('div');
 	nd.className = 'killBlock'
-	nd.innerHTML = '.';
+	nd.innerHTML = '&thinsp;';
 	nd.style.width = w+'px';
 	nd.style.height = '20px';
 	this.init(x, y, nd, fld, w, 20, false, fl);
+	}
+/* - - - - - - - [Class] Statue - - - - - - - */
+Statue.prototype = new Entity();
+Statue.prototype.constructor = Statue;
+function Statue(fld, x, y, fl) {
+	var nd = document.createElement('div');
+	nd.className = 'statue'
+	nd.innerHTML = '&thinsp;';
+	nd.style.width = '19px';
+	nd.style.height = '30px';
+	this.taken = false;
+	this.init(x, y, nd, fld, 19, 30, false, fl);
+	}
+Statue.prototype.getPoints = function() {
+	if(this.taken) return 0;
+	this.node.style.display = 'none';
+	this.taken = true;
+	return 1;
 	}
 /* - - - - - - - [Class] GameField - - - - - - - */
 function GameField() {}
@@ -368,19 +395,25 @@ function Game() {
 	// setup
 	this.levelDisp = document.getElementById('levelDisp');
 	this.levelDisp.style.top = '20px';
-	this.levelDisp.style.left = '1050px';
+	this.levelDisp.style.left = '950px';
+	this.scoreDisp = document.getElementById('scoreDisp');
+	this.scoreDisp.style.top = '60px';
+	this.scoreDisp.style.left = '950px';
 	this.field = new GameField();
 	this.currKeyCodes = [] ;
 	this.gravity = 1;
 	this.currLevel = 0;
 	this.xShift = 0;
 	this.moveMargin = 300;
+	this.allScore = 0;
+	this.currLevelScore = 0;
 	// intro
 	this.intro();
 	}
 Game.prototype.level = function(num) {
 	this.entities = [];
 	this.levelDisp.innerHTML = 'Level: '+num;
+	this.scoreDisp.innerHTML = 'Score: '+this.allScore;
 	switch(num) {
 		case 0:
 			this.field.init(5000, 700, 1200, 700, document.getElementById('gameField'), 'bg0.jpg');
@@ -397,6 +430,9 @@ Game.prototype.level = function(num) {
 			// solid blocks
 			var sb = new SolidBlock(this.field, 300, 650, 20, 50, false);
 			this.entities.push(sb);
+			// statues
+			var st = new Statue(this.field, 4900, 670, false);
+			this.entities.push(st);
 			break;
 		case 1:
 			this.field.init(5000, 700, 1200, 700, document.getElementById('gameField'), 'bg1.jpg');
@@ -510,11 +546,13 @@ Game.prototype.end = function() {
 		}
 	this.entities = [];
 	if(win) {
+		this.allScore += this.currLevelScore;
 		this.level(++this.currLevel);
 		}
 	else {
 		//this.currLevel = 0;
 		//this.level(0);
+		this.currLevelScore = 0;
 		this.level(this.currLevel);
 		}
 	}
@@ -554,6 +592,12 @@ Game.prototype.tick = function() {
 		if(i>0) { // for all entities except player
 			// physics
 			this.player.preventCollisionWith(e);
+			// statues
+			if(e instanceof Statue) {
+				if(e.collidesWith(this.player)) {
+					this.currLevelScore += e.getPoints();
+					}
+				}
 			// death
 			if(e instanceof KillBlock) {
 				if(e.collidesWith(this.player)) {
@@ -635,6 +679,8 @@ function draw() {
 	}
 
 </script>
+</body>
+<!-- - - - - - - - - - - - - - - - - </body> - - - - - - - - - - - - - - - - -->
 
 </html>
 <!-- - - - - - - - - - - - - - - - - </html> - - - - - - - - - - - - - - - - -->
