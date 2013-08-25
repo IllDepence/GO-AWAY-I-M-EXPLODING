@@ -32,6 +32,10 @@ position: absolute;
 background-image: url('darkgreypixel.png');
 background-repeat: repeat;
 }
+.killBlock {
+background-image: url('spike.png');
+background-repeat: repeat-x;
+}
 #levelDisp {
 position: absolute;
 top: -100px;
@@ -196,6 +200,8 @@ function Player(fld, x, y) {
 	this.init(x, y, nd, fld, 60, 120, true, false);
 	this.jumplock = 0;
 	this.maxSpeed = 50;
+	this.preBombDeath = false;
+	this.injured = '';
 	this.intvID = self.setInterval((function(self) {return function() {self.updateBomb();}})(this), 1000);
 	}
 Player.prototype.jump = function() {
@@ -223,8 +229,17 @@ Player.prototype.updateBomb = function() {
 		this.explode();
 		}
 	else {
-		this.node.src = 'player_bomb_'+(--this.currBombTimer)+'.png';
+		this.node.src = 'player_bomb_'+(--this.currBombTimer)+this.injured+'.png';
 		//this.node.src = 'player_bomb_'+(this.currBombTimer)+'.png';
+		}
+	}
+Player.prototype.injure = function() {
+	if(this.injured != 'i') {
+		this.xSpeed = 0;
+		this.maxSpeed = 0;
+		this.jumplock = 1;
+		this.injured = 'i';
+		this.node.src = 'player_bomb_'+this.currBombTimer+this.injured+'.png';
 		}
 	}
 Player.prototype.updateExplosion = function() {
@@ -241,8 +256,7 @@ Player.prototype.explode = function() {
 		var e = game.entities[i];
 		if(i>0) { // for all entities except player
 			if(e instanceof Friend && this.collidesWith(e)) {
-				e.node.src = 'friend_dead.gif';
-				e.dead = true;
+				e.die();
 				}
 			}
 		e.tick();
@@ -262,6 +276,13 @@ function Friend(fld, x, y, maxS, normS) {
 	this.prevPosX = -1;
 	this.jumplock = 0;
 	this.speed = normS;
+	}
+Friend.prototype.die = function() {
+	if(!this.dead) {
+		this.node.src = 'friend_dead.gif';
+		this.dead = true;
+		this.height = 63;
+		}
 	}
 Friend.prototype.follow = function(whom) {
 	if(this.dead) {
@@ -304,6 +325,17 @@ function SolidBlock(fld, x, y, w, h, fl) {
 	nd.style.height = h+'px';
 	this.init(x, y, nd, fld, w, h, true, fl);
 	}
+/* - - - - - - - [Class] KillBlock - - - - - - - */
+KillBlock.prototype = new Entity();
+KillBlock.prototype.constructor = KillBlock;
+function KillBlock(fld, x, y, w, fl) {
+	var nd = document.createElement('div');
+	nd.className = 'killBlock'
+	nd.innerHTML = '.';
+	nd.style.width = w+'px';
+	nd.style.height = '20px';
+	this.init(x, y, nd, fld, w, 20, false, fl);
+	}
 /* - - - - - - - [Class] GameField - - - - - - - */
 function GameField() {}
 GameField.prototype.init = function(w, h, dispW, dispH, nd, bg) {
@@ -339,13 +371,14 @@ function Game() {
 	this.field = new GameField();
 	this.currKeyCodes = [] ;
 	this.gravity = 1;
-	this.currLevel = 2;
+	this.currLevel = 3;
 	this.xShift = 0;
 	this.moveMargin = 300;
 	// intro
 	this.intro();
 	}
 Game.prototype.level = function(num) {
+	this.entities = [];
 	this.levelDisp.innerHTML = 'Level: '+num;
 	switch(num) {
 		case 0:
@@ -407,6 +440,20 @@ Game.prototype.level = function(num) {
 			var sb2 = new SolidBlock(this.field, 400, 400, 1500, 60, true);
 			this.entities.push(sb2);
 			break;
+		case 3:
+			this.field.init(2000, 700, 1200, 700, document.getElementById('gameField'), 'bg2.jpg');
+			this.entities = [];
+			// player
+			var plyr = new Player(this.field, 0, 580);
+			this.player = plyr;
+			this.entities.push(plyr);
+			// firends
+			var frnd1 = new Friend(this.field, 1000, 580, 10, 3);
+			this.entities.push(frnd1);
+			// kill blocks
+			var kb = new KillBlock(this.field, 300, 680, 200, false);
+			this.entities.push(kb);
+			break;
 		}
 	}
 Game.prototype.intro = function() {
@@ -421,7 +468,8 @@ Game.prototype.start = function() {
 	draw();
 	}
 Game.prototype.end = function() {
-	var win = true;
+	clearInterval(this.player.intvID);
+	var win = !this.player.preBombDeath;
 	for(var i=0; i<this.entities.length; i++) {
 		var e = this.entities[i];
 		this.field.node.removeChild(e.node);
@@ -471,6 +519,21 @@ Game.prototype.tick = function() {
 			}
 		if(i>0) { // for all entities except player
 			this.player.preventCollisionWith(e);
+			if(e instanceof KillBlock) {
+				if(e.collidesWith(this.player)) {
+					this.player.injure();
+					//this.player.preBombDeath = true;
+					//this.end();
+					}
+				for(var j=0; j<this.entities.length; j++) {
+					ej = this.entities[j];
+					if(ej instanceof Friend) {
+						if(e.collidesWith(ej)) {
+							ej.die();
+							}
+						}
+					}
+				}
 			}
 		// x shift
 		var absPlayerXR = this.player.getX()+this.player.width;
