@@ -278,7 +278,8 @@ Player.prototype.injure = function() {
 Player.prototype.updateExplosion = function() {
 	if(this.currExplFrame > 5) {
 		self.clearInterval(this.intvID);
-		this.node.src = '';
+		//this.node.src = '';
+		this.node.style.display = 'none';
 		this.setX(this.getX()+267);
 		this.setY(this.getY()+187);
 		}
